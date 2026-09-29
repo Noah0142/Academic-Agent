@@ -463,6 +463,8 @@ def verify_citations(papers):
 
 
 if __name__ == '__main__':
-    print('Academic Agent WebUI starting on port 7000...')
-    app.run(host='0.0.0.0', port=7000, debug=True)
+    port = int(os.environ.get('PORT', 7000))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    print(f'Academic Agent WebUI starting on port {port}...')
+    app.run(host='0.0.0.0', port=port, debug=debug)
 

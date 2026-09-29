@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log
+flask_stdout.log
+flask_stderr.log
+debug_retrieve.log
+
+# Debug scripts (development only)
+debug_*.py
+diagnose.py
+frontend_diagnose.py
+run_retrieval.py
+verify_databases.py
+
+# Generated data (not needed in repo)
+outputs/
+reports/
+literature/
+task_cards/
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store

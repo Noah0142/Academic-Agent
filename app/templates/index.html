@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学术智能体 — AI在膝骨关节炎精准分型中的应用文献检索</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --success: #059669;
+    --success-light: #ecfdf5;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --danger: #dc2626;
+    --surface: #ffffff;
+    --bg: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white; padding: 16px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-logo {
+    width: 36px; height: 36px; background: rgba(255,255,255,0.2);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+  }
+  .header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em; }
+  .header-sub { font-size: 0.75rem; opacity: 0.8; margin-top: 1px; }
+  .header-status {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.15); padding: 6px 14px;
+    border-radius: 20px; font-size: 0.8rem;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  /* Main Layout */
+  .main {
+    display: flex; height: calc(100vh - 68px);
+    gap: 1px; background: var(--border);
+  }
+
+  /* Zone: Left Panel */
+  .zone-left {
+    width: 360px; min-width: 360px;
+    background: var(--surface); overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .zone-right { flex: 1; display: flex; flex-direction: column; background: var(--bg); }
+  .zone-top {
+    flex: 1; min-height: 0; background: var(--surface);
+    border-bottom: 1px solid var(--border); overflow-y: auto;
+  }
+  .zone-bottom { flex: 1; min-height: 0; overflow-y: auto; background: var(--bg); }
+
+  /* Zone Title */
+  .zone-title {
+    padding: 12px 20px; font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .zone-title .icon { font-size: 1rem; }
+  .zone-bottom .zone-title { background: #f8fafc; }
+
+  /* Form Inputs */
+  .form-section { padding: 16px 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block; font-size: 0.78rem; font-weight: 500;
+    color: var(--text-secondary); margin-bottom: 5px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 0.85rem; font-family: inherit;
+    transition: all 0.15s; background: var(--surface); color: var(--text);
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+  }
+  .form-textarea { resize: vertical; min-height: 36px; line-height: 1.5; }
+
+  /* Buttons */
+  .btn {
+    width: 100%; padding: 10px 16px; margin-top: 8px;
+    border: none; border-radius: 8px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; font-family: inherit;
+    transition: all 0.15s; display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .btn-primary {
+    background: var(--primary); color: white;
+    box-shadow: 0 1px 2px rgba(79,70,229,0.3);
+  }
+  .btn-primary:hover:not(:disabled) { background: #4338ca; transform: translateY(-1px); }
+  .btn-success {
+    background: var(--success); color: white;
+    box-shadow: 0 1px 2px rgba(5,150,105,0.3);
+  }
+  .btn-success:hover:not(:disabled) { background: #047857; }
+  .btn-warning {
+    background: var(--warning); color: white;
+    box-shadow: 0 1px 2px rgba(217,119,6,0.3);
+  }
+  .btn-warning:hover:not(:disabled) { background: #b45309; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Task Card */
+  .task-card {
+    margin: 12px 16px; padding: 14px 16px;
+    background: var(--primary-light); border: 1px solid #c7d2fe;
+    border-radius: var(--radius); font-size: 0.82rem;
+  }
+  .task-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .task-card-id {
+    font-size: 0.72rem; font-weight: 600; color: var(--primary);
+    background: white; padding: 2px 8px; border-radius: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .task-card-status {
+    font-size: 0.72rem; padding: 3px 10px; border-radius: 12px;
+    font-weight: 500;
+  }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-confirmed { background: #dbeafe; color: #1e40af; }
+  .status-done { background: #d1fae5; color: #065f46; }
+  .task-field { margin-top: 6px; }
+  .task-field-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+  .task-field-value { font-size: 0.82rem; color: var(--text); margin-top: 1px; }
+
+  /* Query Box */
+  .query-box {
+    margin: 8px 16px; padding: 12px 14px;
+    background: #f8fafc; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 0.75rem;
+  }
+  .query-box-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .query-db-name {
+    font-weight: 700; font-size: 0.72rem; letter-spacing: 0.05em;
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .db-pubmed { background: #dbeafe; color: #1e40af; }
+  .db-ieee { background: #fce7f3; color: #9d174d; }
+  .db-openalex { background: #d1fae5; color: #065f46; }
+  .query-text {
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.72rem; color: #475569; line-height: 1.6;
+    word-break: break-all; max-height: 150px; overflow-y: auto;
+    background: white; padding: 10px; border-radius: 6px;
+    border: 1px solid #f1f5f9; white-space: pre-wrap;
+  }
+  .query-filters { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+
+  /* Literature Items */
+  .lit-item {
+    padding: 12px 20px; border-bottom: 1px solid #f1f5f9;
+    transition: background 0.1s; cursor: pointer;
+  }
+  .lit-item:hover { background: #f8fafc; }
+  .lit-header { display: flex; align-items: flex-start; gap: 10px; }
+  .lit-index {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: var(--primary-light); color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .lit-content { flex: 1; min-width: 0; }
+  .lit-title {
+    font-size: 0.85rem; font-weight: 600; color: var(--text);
+    line-height: 1.45; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .lit-meta {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin-top: 5px;
+  }
+  .lit-authors { font-size: 0.75rem; color: var(--text-secondary); }
+  .lit-year {
+    font-size: 0.72rem; font-weight: 600; color: var(--primary);
+    background: var(--primary-light); padding: 1px 7px; border-radius: 4px;
+  }
+  .lit-journal { font-size: 0.72rem; color: var(--text-muted); font-style: italic; }
+  .lit-doi {
+    font-size: 0.72rem; color: var(--primary);
+    text-decoration: none; font-family: 'SF Mono', monospace;
+  }
+  .lit-doi:hover { text-decoration: underline; }
+  .lit-abstract {
+    font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px;
+    line-height: 1.55; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 0.68rem; font-weight: 500;
+  }
+  .badge-pubmed { background: #dbeafe; color: #1e40af; }
+  .badge-ieee { background: #fce7f3; color: #9d174d; }
+  .badge-openalex { background: #d1fae5; color: #065f46; }
+  .badge-review { background: #fef3c7; color: #92400e; }
+  .badge-systematic { background: #f3e8ff; color: #7c3aed; }
+
+  /* Report Items */
+  .report-item {
+    margin: 10px 16px; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); display: flex;
+    align-items: center; justify-content: space-between;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .report-item:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+  .report-info { flex: 1; }
+  .report-title { font-size: 0.85rem; font-weight: 600; }
+  .report-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+  .report-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #fef3c7; display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; flex-shrink: 0;
+  }
+
+  /* Report Content */
+  #reportContent { background: var(--surface); }
+  #reportBody h1 { font-size: 1.2rem; font-weight: 700; margin: 16px 0 12px; color: var(--text); }
+  #reportBody h2 { font-size: 1.05rem; font-weight: 600; margin: 14px 0 10px; color: var(--text); }
+  #reportBody h3 { font-size: 0.92rem; font-weight: 600; margin: 12px 0 8px; color: var(--text); }
+  #reportBody p { margin: 6px 0; color: var(--text-secondary); }
+  #reportBody ul { margin: 6px 0; padding-left: 20px; }
+  #reportBody li { margin: 3px 0; color: var(--text-secondary); }
+  #reportBody a { color: var(--primary); text-decoration: none; }
+  #reportBody a:hover { text-decoration: underline; }
+  #reportContent .btn { margin-top: 0; }
+
+  /* Status Bar */
+  .status-bar {
+    padding: 8px 20px; font-size: 0.75rem; color: var(--text-secondary);
+    border-top: 1px solid var(--border); background: #f8fafc;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* Empty State */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 40px 20px;
+    color: var(--text-muted); text-align: center;
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
+  .empty-text { font-size: 0.85rem; }
+
+  /* Spinner */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+  }
+
+  /* Toast */
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  #toast { animation: slideIn 0.3s ease-out; }
+  #toast code {
+    background: #f1f5f9; padding: 2px 6px; border-radius: 4px;
+    font-size: 0.72rem; word-break: break-all;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+  /* Divider */
+  .divider {
+    height: 1px; background: var(--border); margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">学</div>
+      <div>
+        <h1>学术智能体</h1>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <span id="headerStatus">就绪 — 端口 7000</span>
+      <span id="versionBadge" style="font-size:0.65rem;opacity:0.7;margin-left:4px;"></span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 左侧：主题工作流 -->
+    <div class="zone-left">
+      <div class="zone-title">
+        <span class="icon">🎯</span> 主题工作流
+      </div>
+
+      <div class="form-section">
+        <div class="form-group">
+          <label class="form-label">研究主题 / 关注问题</label>
+          <input type="text" id="themeInput" class="form-input"
+                 placeholder="如：人工智能在膝骨关节炎精准分型中的应用"
+                 value="人工智能在膝骨关节炎精准分型中的应用">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">研究方向（自由输入）</label>
+          <input type="text" id="directionInput" class="form-input"
+                 placeholder="如：精准分型、精准治疗、功能康复、多模态融合..."
+                 value="精准分型">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">P — 医学核心问题（可选）</label>
+          <textarea id="problemInput" class="form-textarea" rows="2"
+                    placeholder="疾病领域与应用场景"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">I — 技术与方法（可选）</label>
+          <textarea id="innovationInput" class="form-textarea" rows="2"
+                    placeholder="AI模型架构、算法改进点"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">O — 关键评价指标（可选）</label>
+          <input type="text" id="outcomeInput" class="form-input"
+                 placeholder="如：Accuracy, AUC, Dice">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">D — 数据集与样本（可选）</label>
+          <input type="text" id="dataInput" class="form-input"
+                 placeholder="如：OAI, MRNet, MRI">
+        </div>
+
+        <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">
+          ⚡ 生成检索式
+        </button>
+        <button class="btn btn-success" id="confirmBtn" onclick="doConfirmAndRetrieve()" style="display:none">
+          ✓ 确认并检索文献
+        </button>
+        <button class="btn btn-warning" id="reportBtn" onclick="doGenerateReport()" style="display:none">
+          📝 生成综述报告
+        </button>
+      </div>
+
+      <div id="taskCardArea"></div>
+      <div id="queryArea"></div>
+
+      <!-- 调试面板 -->
+      <div style="padding: 0 16px 16px;">
+        <div id="debugPanel" style="
+          background: #1e293b; color: #4ade80;
+          font-family: 'SF Mono', 'Fira Code', monospace;
+          font-size: 0.72rem; line-height: 1.7;
+          border-radius: 8px; overflow: hidden;
+        ">
+          <div style="padding: 8px 12px; background: #0f172a; color: #94a3b8; font-weight: 600; font-size: 0.7rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleDebug()">
+            <span>调试日志</span>
+            <span id="debugToggleIcon" style="font-size: 0.6rem;">▼ 点击展开</span>
+          </div>
+          <div id="debugContent" style="padding: 10px 12px; max-height: 40px; overflow: hidden; transition: max-height 0.3s ease; white-space: pre-wrap; word-break: break-all;">
+            等待操作...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：文献管理 + 综述列表 -->
+    <div class="zone-right">
+      <div class="zone-top">
+        <div class="zone-title">
+          <span class="icon">📚</span> 文献管理
+          <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted)" id="litCount"></span>
+        </div>
+        <div class="status-bar" id="litStatusBar">
+          <span>⏳ 等待检索...</span>
+        </div>
+        <div id="literatureList">
+          <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <div class="empty-text">输入研究主题，生成任务卡后开始检索</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone-bottom">
+        <div class="zone-title">
+          <span class="icon">📝</span> 综述报告
+          <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted)" id="reportCount"></span>
+        </div>
+        <div id="reportList">
+          <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <div class="empty-text">检索完成后可生成综述报告</div>
+          </div>
+        </div>
+        <div id="reportContent" style="display:none; padding: 16px; overflow-y: auto; flex: 1;">
+          <div id="reportBody" style="line-height: 1.8; font-size: 0.85rem;"></div>
+          <div style="margin-top: 16px; text-align: right;">
+            <button class="btn btn-primary" id="downloadBtn" onclick="downloadReport()" style="width: auto; padding: 8px 20px; font-size: 0.8rem;">
+              ⬇ 下载报告
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+let currentTaskId = null;
+let currentTaskCard = null;
+
+async function doSearch() {
+  const theme = document.getElementById('themeInput').value.trim();
+  if (!theme) { alert('请输入研究主题'); return; }
+
+  const direction = document.getElementById('directionInput').value;
+  const problem = document.getElementById('problemInput').value;
+  const innovation = document.getElementById('innovationInput').value;
+  const outcome = document.getElementById('outcomeInput').value;
+  const data = document.getElementById('dataInput').value;
+
+  const btn = document.getElementById('searchBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>生成中...';
+  debugLog('开始生成检索式...');
+
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({theme, direction, problem, innovation, outcome, data})
+    });
+    const result = await resp.json();
+    debugLog('搜索响应: ' + JSON.stringify({status: resp.status, task_id: result.task_id, error: result.error}));
+    if (result.error) { alert(result.error); return; }
+
+    currentTaskId = result.task_id;
+    currentTaskCard = result.task_card;
+    renderTaskCard(result.task_card);
+    document.getElementById('confirmBtn').style.display = 'block';
+    document.getElementById('headerStatus').textContent = `任务 ${currentTaskId} — 待确认`;
+    debugLog('任务卡已生成: ' + currentTaskId);
+  } catch (e) {
+    debugLog('错误: ' + e.message);
+    alert('请求失败: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+function renderTaskCard(tc) {
+  const area = document.getElementById('taskCardArea');
+  const statusClass = tc.status === 'pending_confirm' ? 'status-pending' : 'status-confirmed';
+  const statusText = tc.status === 'pending_confirm' ? '待确认' : '已确认';
+  area.innerHTML = `
+    <div class="task-card">
+      <div class="task-card-header">
+        <span class="task-card-id">#${tc.task_id}</span>
+        <span class="task-card-status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="task-field">
+        <div class="task-field-label">主题</div>
+        <div class="task-field-value">${tc.theme}</div>
+      </div>
+      <div class="task-field">
+        <div class="task-field-label">方向</div>
+        <div class="task-field-value">${tc.direction || '未指定'}</div>
+      </div>
+      <div class="task-field">
+        <div class="task-field-label">数据库</div>
+        <div class="task-field-value">${tc.databases.join(', ')}</div>
+      </div>
+      <div class="task-field">
+        <div class="task-field-label">时间范围 / 文献类型</div>
+        <div class="task-field-value">${tc.time_range} · ${tc.doc_types.join(', ')}</div>
+      </div>
+    </div>`;
+}
+
+async function doConfirmAndRetrieve() {
+  if (!currentTaskId) return;
+  const confirmBtn = document.getElementById('confirmBtn');
+  const originalText = confirmBtn.innerHTML;
+  confirmBtn.disabled = true;
+
+  try {
+    debugLog('确认任务卡: ' + currentTaskId);
+    confirmBtn.innerHTML = '<span class="spinner"></span>生成检索式...';
+    const resp = await fetch('/api/confirm', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task_id: currentTaskId})
+    });
+    const result = await resp.json();
+    debugLog('确认响应: status=' + resp.status + ', queries=' + (result.queries ? Object.keys(result.queries).length : 0));
+    if (result.error) { alert('确认失败: ' + result.error); return; }
+    if (result.queries) renderQueries(result.queries);
+
+    if (currentTaskCard) {
+      currentTaskCard.status = 'query_generated';
+      renderTaskCard(currentTaskCard);
+    }
+
+    debugLog('开始检索文献...');
+    confirmBtn.innerHTML = '<span class="spinner"></span>检索文献中...';
+    const retResp = await fetch('/api/retrieve', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task_id: currentTaskId})
+    });
+    const retResult = await retResp.json();
+    debugLog('检索响应: total=' + retResult.total + ', papers=' + (retResult.papers?.length || 0) + ', all_papers=' + (retResult.all_papers?.length || 0));
+    if (retResult.error) { alert('检索出错: ' + retResult.error); return; }
+
+    const total = retResult.total || 0;
+    const pubmedCount = retResult.databases?.pubmed || 0;
+    const ieeeCount = retResult.databases?.ieee || 0;
+    const oalexCount = retResult.databases?.openalex || 0;
+
+    if (total === 0) {
+      debugLog('警告: 后端返回 0 篇，尝试诊断...');
+      try {
+        const debugResp = await fetch('/api/debug/retrieve', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({task_id: currentTaskId})
+        });
+        const debugData = await debugResp.json();
+        debugLog('诊断结果: ' + JSON.stringify({
+          task_card_exists: debugData.task_card_exists,
+          theme: debugData.theme,
+          pubmed_count: debugData.pubmed?.count,
+          ieee_count: debugData.ieee?.count,
+          openalex_count: debugData.openalex?.count,
+          pubmed_error: debugData.pubmed?.error,
+          openalex_error: debugData.openalex?.error,
+        }));
+        document.getElementById('litStatusBar').innerHTML =
+          `⚠️ 未检索到文献<br><small>请把左侧调试日志内容截图发给开发者</small>`;
+      } catch (e) {
+        document.getElementById('litStatusBar').innerHTML =
+          `⚠️ 未检索到文献<br><small>请确认 Flask 服务器已重启（Ctrl+C 停止后重新运行 python app/webui.py），然后浏览器 Ctrl+Shift+R</small>`;
+      }
+    } else {
+      document.getElementById('litStatusBar').innerHTML =
+        `✅ 检索完成：共 <strong>${total}</strong> 篇（PubMed ${pubmedCount} · IEEE ${ieeeCount} · OpenAlex ${oalexCount}）`;
+    }
+    document.getElementById('litCount').textContent = `${total} 篇`;
+    renderLiterature(retResult.all_papers || retResult.papers || []);
+    document.getElementById('headerStatus').textContent =
+      `任务 ${currentTaskId} — 已检索 ${total} 篇`;
+    document.getElementById('reportBtn').style.display = 'block';
+
+    if (total > 0) {
+      document.querySelector('.zone-top').scrollIntoView({behavior: 'smooth'});
+    }
+  } catch (e) {
+    debugLog('错误: ' + e.message);
+    alert('检索失败: ' + e.message + '\n请确认 Flask 服务器正在运行');
+  } finally {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = originalText;
+  }
+}
+
+function renderQueries(queries) {
+  const area = document.getElementById('queryArea');
+  const dbClass = { 'PubMed': 'db-pubmed', 'IEEE': 'db-ieee', 'OpenAlex': 'db-openalex' };
+  let html = '';
+  for (const [db, q] of Object.entries(queries)) {
+    html += `
+      <div class="query-box">
+        <div class="query-box-header">
+          <span class="query-db-name ${dbClass[db] || ''}">${db.toUpperCase()}</span>
+        </div>
+        <div class="query-text">${q.query || ''}</div>
+        <div class="query-filters">${q.filters || ''}</div>
+      </div>`;
+  }
+  area.innerHTML = html;
+}
+
+async function doGenerateReport() {
+  if (!currentTaskId) return;
+  const btn = document.getElementById('reportBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>生成中...';
+
+  try {
+    const resp = await fetch('/api/report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task_id: currentTaskId})
+    });
+    const result = await resp.json();
+    if (result.content) {
+      const reportContent = document.getElementById('reportContent');
+      const reportBody = document.getElementById('reportBody');
+      const reportList = document.getElementById('reportList');
+      
+      reportList.style.display = 'none';
+      reportContent.style.display = 'block';
+      reportBody.innerHTML = markdownToHtml(result.content);
+      
+      document.getElementById('headerStatus').textContent = `任务 ${currentTaskId} — 报告已生成`;
+      showToast('报告已生成，请在右下角查看');
+    }
+  } catch (e) {
+    alert('报告生成失败: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📝 生成综述报告';
+}
+
+function markdownToHtml(md) {
+  if (!md) return '';
+  let html = md
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.*$)/gim, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
+    .replace(/\n/g, '<br>');
+  return html;
+}
+
+async function downloadReport() {
+  if (!currentTaskId) return;
+  try {
+    const resp = await fetch('/api/report/download', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({task_id: currentTaskId})
+    });
+    if (!resp.ok) throw new Error('Download failed');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${currentTaskId}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('报告已开始下载');
+  } catch (e) {
+    alert('下载失败: ' + e.message);
+  }
+}
+
+function renderLiterature(papers) {
+  const list = document.getElementById('literatureList');
+  if (!papers.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-text">暂无文献</div></div>';
+    return;
+  }
+  const dbBadge = {
+    'PubMed': 'badge-pubmed', 'IEEE Xplore': 'badge-ieee',
+    'OpenAlex': 'badge-openalex'
+  };
+  const evBadge = {
+    '系统评价': 'badge-systematic', '综述': 'badge-review',
+  };
+  let html = '';
+  papers.forEach((p, i) => {
+    const dbCls = dbBadge[p.database] || 'badge-pubmed';
+    const evCls = evBadge[p.evidence_level] || '';
+    html += `
+      <div class="lit-item">
+        <div class="lit-header">
+          <div class="lit-index">${i + 1}</div>
+          <div class="lit-content">
+            <div class="lit-title">${p.title || 'N/A'}</div>
+            <div class="lit-meta">
+              <span class="lit-authors">${(p.authors || '').substring(0, 60)}</span>
+              <span class="lit-year">${p.year || ''}</span>
+              <span class="badge ${dbCls}">${p.database || ''}</span>
+              ${evCls ? `<span class="badge ${evCls}">${p.evidence_level}</span>` : ''}
+            </div>
+            <div class="lit-meta">
+              <span class="lit-journal">${(p.journal || '').substring(0, 50)}</span>
+            </div>
+            ${p.doi ? `<a class="lit-doi" href="https://doi.org/${p.doi}" target="_blank">DOI: ${p.doi}</a>` : ''}
+            ${p.abstract ? `<div class="lit-abstract">${p.abstract}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
+// Toast 通知
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  if (!toast || !toastMsg) {
+    alert('提示: ' + msg.replace(/<[^>]+>/g, ''));
+    return;
+  }
+  toastMsg.innerHTML = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 8000);
+}
+
+// 调试面板
+let debugExpanded = false;
+function toggleDebug() {
+  debugExpanded = !debugExpanded;
+  const content = document.getElementById('debugContent');
+  const icon = document.getElementById('debugToggleIcon');
+  if (content) {
+    content.style.maxHeight = debugExpanded ? '500px' : '40px';
+  }
+  if (icon) {
+    icon.textContent = debugExpanded ? '▲ 点击收起' : '▼ 点击展开';
+  }
+}
+
+function debugLog(msg) {
+  const panel = document.getElementById('debugPanel');
+  const content = document.getElementById('debugContent');
+  if (panel && content) {
+    panel.style.display = 'block';
+    const time = new Date().toLocaleTimeString();
+    const line = `[${time}] ${msg}`;
+    if (content.textContent === '等待操作...') {
+      content.textContent = line;
+    } else {
+      content.textContent += '\n' + line;
+    }
+  }
+  console.log('[debug]', msg);
+}
+
+// 加载历史报告列表
+async function loadReportHistory() {
+  try {
+    const resp = await fetch('/api/reports');
+    const data = await resp.json();
+    renderReports(data.reports || []);
+  } catch (e) {
+    console.error('Failed to load reports:', e);
+  }
+}
+
+function renderReports(reports) {
+  const list = document.getElementById('reportList');
+  const countEl = document.getElementById('reportCount');
+  if (!reports || !reports.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">检索完成后可生成综述报告</div></div>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  if (countEl) countEl.textContent = `${reports.length} 份报告`;
+  let html = '';
+  reports.forEach((r, i) => {
+    const sizeKB = (r.size / 1024).toFixed(1);
+    const date = new Date(r.modified * 1000).toLocaleString('zh-CN');
+    const isDocx = r.name.endsWith('.docx');
+    html += `
+      <div class="report-item" onclick="alert('报告路径：\\n${r.path.replace(/\\/g, '\\\\')}')">
+        <div class="report-info">
+          <div class="report-title">${r.name}</div>
+          <div class="report-meta">${sizeKB} KB · 生成时间：${date}</div>
+        </div>
+        <div class="report-icon">${isDocx ? '📊' : '📝'}</div>
+      </div>`;
+  });
+  list.innerHTML = html;
+}
+
+// 页面加载时不自动加载历史报告（报告在生成后直接展示）
+
+// 检查后端版本
+(async function checkHealth() {
+  try {
+    const resp = await fetch('/api/health');
+    const data = await resp.json();
+    console.log('[health]', data);
+    const vb = document.getElementById('versionBadge');
+    if (vb) vb.textContent = 'v' + data.version;
+    if (data.version !== '2026-09-28-v3') {
+      console.warn('[warning] Backend version mismatch. Expected 2026-09-28-v3, got', data.version);
+      alert('警告：后端版本不匹配！\n期望：2026-09-28-v3\n实际：' + data.version + '\n\n请重启 Flask 服务器：Ctrl+C 停止后重新运行 python app/webui.py');
+    }
+  } catch (e) {
+    console.error('[health check failed]', e);
+  }
+})();
+
+document.getElementById('headerStatus').textContent = '就绪 — 输入研究主题开始';
+</script>
+</body>
+</html>

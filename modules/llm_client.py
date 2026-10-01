@@ -64,42 +64,128 @@ def generate_queries_with_llm(theme, direction='', databases=None):
         databases = ['PubMed', 'IEEE Xplore']
 
     system_prompt = (
-        '你是一个专业的医学文献检索专家。'
-        '请根据用户提供的中文研究主题，生成规范的英文检索式。'
+        '你是一个专业的医学文献检索专家，精通 PubMed MeSH 词表、IEEE Xplore Index Terms 检索语法。'
+        '请根据中文研究主题，生成符合各数据库规范的英文检索式。'
         '只返回 JSON，不要返回其他内容。'
     )
 
     user_prompt = f"""请为主题"{theme}"（研究方向：{direction or '未指定'}）生成以下数据库的检索式：
 
-数据库：{', '.join(databases)}
+【PubMed 检索式要求】
+1. 必须使用 MeSH 主题词 + 自由词组合
+2. 格式规范：
+   - MeSH 词：("Knee Osteoarthritis"[MeSH])
+   - 自由词：("Knee Osteoarthritis"[Title/Abstract])
+   - 组合：("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract])
+   - 不同概念用 AND 连接
+   - 同义词/缩略语用 OR 连接
+   - 截词符：Radiograph*
+3. 示例完整检索式：
+   ("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract]) AND ("Artificial Intelligence"[Title/Abstract] OR "Deep Learning"[Title/Abstract] OR "Machine Learning"[Title/Abstract]) AND ("Medical Imaging"[Title/Abstract] OR "Radiograph*"[Title/Abstract] OR "Magnetic Resonance Imaging"[Title/Abstract])
 
-要求：
-1. PubMed 检索式使用 MeSH 词 + 自由词组合，格式如：
-   ("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract]) AND ("Artificial Intelligence"[Title/Abstract] OR "Deep Learning"[Title/Abstract])
-2. IEEE 检索式使用 Index Terms 精确匹配，格式如：
-   ("Index Terms":Knee Osteoarthritis OR "Index Terms":Knee Osteoarthritis (KOA)) AND ("Index Terms":Deep Learning OR "Index Terms":Machine Learning)
-3. OpenAlex 检索式直接使用关键词，用空格连接，如：
-   Knee Osteoarthritis Artificial Intelligence Deep Learning
+【IEEE Xplore 检索式要求】
+1. 使用 "Index Terms":Term 精确匹配
+2. 缩略语放在括号内：Knee Osteoarthritis (KOA)
+3. 不同概念用 AND 连接
+4. 示例：
+   ("Index Terms":Knee Osteoarthritis OR "Index Terms":Knee Osteoarthritis (KOA)) AND ("Index Terms":Deep Learning OR "Index Terms":Machine Learning OR "Index Terms":Convolutional Neural Networks) AND ("Index Terms":Image Classification OR "Index Terms":Medical Imaging)
 
-请返回 JSON 格式：
+【OpenAlex 检索式要求】
+1. 直接使用英文关键词，空格连接
+2. 示例：Knee Osteoarthritis Artificial Intelligence Deep Learning
+
+重要提示：
+- 每个数据库的 query 字段必须是完整的、可执行的检索式字符串
+- 不要使用 + 号拼接字符串，不要换行，整个检索式放在一个字符串中
+- JSON 中的双引号不需要转义，直接写英文双引号即可
+
+请返回 JSON 格式（query 字段必须是符合上述规范的完整检索式字符串，不要包含任何换行符）：
 {{
-  "pubmed": {{"query": "...", "filters": "近5年 | Journal Article, Review", "note": "..."}},
-  "ieee": {{"query": "...", "filters": "近2年 | Conferences/Journals/Early Access", "note": "..."}},
-  "openalex": {{"query": "...", "note": "..."}}
+  "pubmed": {{"query": "完整的 PubMed 检索式", "filters": "近5年 | Journal Article, Review", "note": "MeSH + 自由词组合"}},
+  "ieee": {{"query": "完整的 IEEE 检索式", "filters": "近2年 | Conferences/Journals/Early Access", "note": "Index Terms 精确匹配"}},
+  "openalex": {{"query": "OpenAlex 关键词", "note": "空格分隔关键词"}}
 }}"""
 
-    result = call_llm(system_prompt, user_prompt, temperature=0.3, max_tokens=1000)
+    result = call_llm(system_prompt, user_prompt, temperature=0.3, max_tokens=1500)
     if not result:
         return None
 
     try:
-        json_start = result.find('{')
-        json_end = result.rfind('}') + 1
-        if json_start >= 0 and json_end > json_start:
-            json_str = result[json_start:json_end]
-            return json.loads(json_str)
+        # 去除代码块标记
+        cleaned = result.strip()
+        if cleaned.startswith('```json'):
+            cleaned = cleaned[7:]
+        elif cleaned.startswith('```'):
+            cleaned = cleaned[3:]
+        if cleaned.endswith('```'):
+            cleaned = cleaned[:-3]
+        cleaned = cleaned.strip()
+
+        # 尝试直接解析完整 JSON
+        try:
+            parsed = json.loads(cleaned)
+            if isinstance(parsed, dict):
+                # 确保返回的字典包含所需的键
+                result_dict = {}
+                for db in ['pubmed', 'ieee', 'openalex']:
+                    if db in parsed:
+                        result_dict[db] = parsed[db]
+                if result_dict:
+                    return result_dict
+        except json.JSONDecodeError:
+            pass
+
+        # 如果直接解析失败，用正则提取各个数据库的检索式
+        import re
+
+        result_dict = {}
+
+        # 提取 pubmed
+        pubmed_query = re.search(r'"pubmed"\s*:\s*\{[^}]*"query"\s*:\s*"(.+?)"(?=\s*[,}])', cleaned, re.DOTALL)
+        pubmed_filters = re.search(r'"pubmed"\s*:\s*\{[^}]*"filters"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+        pubmed_note = re.search(r'"pubmed"\s*:\s*\{[^}]*"note"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+
+        if pubmed_query:
+            query = pubmed_query.group(1)
+            # 修复引号：将 'Term'[Field] 替换回 "Term"[Field]，并去除多余转义
+            query = re.sub(r"'([^']+)'(\[\w+\])", r'"\1"\2', query)
+            query = query.replace('\\"', '"').replace('\\\\', '\\')
+            result_dict['pubmed'] = {
+                'query': query,
+                'filters': pubmed_filters.group(1) if pubmed_filters else '近5年 | Journal Article, Review',
+                'note': pubmed_note.group(1) if pubmed_note else '',
+            }
+
+        # 提取 ieee
+        ieee_query = re.search(r'"ieee"\s*:\s*\{[^}]*"query"\s*:\s*"(.+?)"(?=\s*[,}])', cleaned, re.DOTALL)
+        ieee_filters = re.search(r'"ieee"\s*:\s*\{[^}]*"filters"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+        ieee_note = re.search(r'"ieee"\s*:\s*\{[^}]*"note"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+
+        if ieee_query:
+            query = ieee_query.group(1)
+            query = re.sub(r"'([^']+)'(\[\w+\])", r'"\1"\2', query)
+            query = query.replace('\\"', '"').replace('\\\\', '\\')
+            result_dict['ieee'] = {
+                'query': query,
+                'filters': ieee_filters.group(1) if ieee_filters else '近2年 | Conferences/Journals/Early Access',
+                'note': ieee_note.group(1) if ieee_note else '',
+            }
+
+        # 提取 openalex
+        oalex_query = re.search(r'"openalex"\s*:\s*\{[^}]*"query"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+        oalex_note = re.search(r'"openalex"\s*:\s*\{[^}]*"note"\s*:\s*"([^"]*)"', cleaned, re.DOTALL)
+
+        if oalex_query:
+            result_dict['openalex'] = {
+                'query': oalex_query.group(1),
+                'note': oalex_note.group(1) if oalex_note else '',
+            }
+
+        if result_dict:
+            return result_dict
+
     except Exception as e:
-        print(f'[LLM] JSON parse error: {e}')
+        print(f'[LLM] Parse error: {e}')
 
     return None
 

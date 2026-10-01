@@ -76,7 +76,7 @@ def _cn_to_en_medical(theme):
 def search_ieee(theme, task_card=None):
     """在 IEEE Xplore 中检索文献。"""
     if not IEEE_API_KEY:
-        return _sample_results()
+        return _sample_results(theme)
 
     # 优先使用 LLM 生成的检索式
     querytext = None
@@ -127,30 +127,7 @@ def search_ieee(theme, task_card=None):
     return results
 
 
-def _sample_results():
-    return [
-        {
-            'id': 'IEEE_SAMPLE_001',
-            'title': 'Computational Intelligence in Knee Osteoarthritis Detection: A Systematic Review of AI and Machine Learning Approaches',
-            'authors': 'Sharma A, Garg VK',
-            'year': '2026',
-            'journal': '2026 International Conference on CIPHER',
-            'doi': '10.1109/CIPHER70417.2026.11524036',
-            'abstract': 'CI and AI for early diagnosis of KOA. Systematic review comparing methodologies and performance, identifying gaps from research to clinical translation.',
-            'database': 'IEEE Xplore',
-            'evidence_level': '系统评价',
-            'source_url': 'https://doi.org/10.1109/CIPHER70417.2026.11524036',
-        },
-        {
-            'id': 'IEEE_SAMPLE_002',
-            'title': 'Deep Learning for Knee Osteoarthritis X-ray Grading: A CNN-based Approach with Transfer Learning',
-            'authors': 'Zhang L, Wang H',
-            'year': '2025',
-            'journal': 'IEEE Transactions on Medical Imaging',
-            'doi': '10.1109/TMI.2025.XXXXXXX',
-            'abstract': 'CNN-based approach with transfer learning for KOA X-ray grading, achieving high accuracy on multi-center datasets.',
-            'database': 'IEEE Xplore',
-            'evidence_level': '原始研究',
-            'source_url': 'https://doi.org/10.1109/TMI.2025.XXXXXXX',
-        },
-    ]
+def _sample_results(theme=''):
+    """无 API Key 时返回空列表，避免返回与主题无关的硬编码样本。"""
+    print(f'[IEEE] No API key configured, returning empty results for theme: {theme}')
+    return []

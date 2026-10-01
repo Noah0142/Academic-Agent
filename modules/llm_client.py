@@ -73,37 +73,36 @@ def generate_queries_with_llm(theme, direction='', databases=None):
 
 【PubMed 检索式要求】
 1. 必须使用 MeSH 主题词 + 自由词组合
-2. 格式规范：
+2. 格式规范（严格遵守括号和引号规则）：
    - MeSH 词：("Knee Osteoarthritis"[MeSH])
    - 自由词：("Knee Osteoarthritis"[Title/Abstract])
    - 组合：("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract])
-   - 不同概念用 AND 连接
+   - 每个概念组必须用圆括号包裹
+   - 不同概念组之间用 AND 连接
    - 同义词/缩略语用 OR 连接
    - 截词符：Radiograph*
-3. 示例完整检索式：
-   ("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract]) AND ("Artificial Intelligence"[Title/Abstract] OR "Deep Learning"[Title/Abstract] OR "Machine Learning"[Title/Abstract]) AND ("Medical Imaging"[Title/Abstract] OR "Radiograph*"[Title/Abstract] OR "Magnetic Resonance Imaging"[Title/Abstract])
+3. 完整示例（注意所有术语都有双引号）：
+   (("Knee Osteoarthritis"[MeSH] OR "Knee Osteoarthritis"[Title/Abstract]) AND ("Artificial Intelligence"[Title/Abstract] OR "Deep Learning"[Title/Abstract] OR "Machine Learning"[Title/Abstract]) AND ("Medical Imaging"[Title/Abstract] OR "Radiograph*"[Title/Abstract]))
+4. 重要：PubMed 中 AND 优先级高于 OR，必须用括号明确分组！
+5. 所有医学术语必须用英文双引号包裹，如 "Term"[MeSH] 或 "Term"[Title/Abstract]
 
 【IEEE Xplore 检索式要求】
-1. 使用 "Index Terms":Term 精确匹配
+1. 使用 "Index Terms":Term 精确匹配，Term 用双引号包裹
 2. 缩略语放在括号内：Knee Osteoarthritis (KOA)
-3. 不同概念用 AND 连接
-4. 示例：
-   ("Index Terms":Knee Osteoarthritis OR "Index Terms":Knee Osteoarthritis (KOA)) AND ("Index Terms":Deep Learning OR "Index Terms":Machine Learning OR "Index Terms":Convolutional Neural Networks) AND ("Index Terms":Image Classification OR "Index Terms":Medical Imaging)
+3. 每个概念组用圆括号包裹
+4. 不同概念组之间用 AND 连接
+5. 示例：
+   (("Index Terms":"Knee Osteoarthritis" OR "Index Terms":"Knee Osteoarthritis (KOA)") AND ("Index Terms":"Deep Learning" OR "Index Terms":"Machine Learning") AND ("Index Terms":"Image Classification" OR "Index Terms":"Medical Imaging"))
 
 【OpenAlex 检索式要求】
 1. 直接使用英文关键词，空格连接
 2. 示例：Knee Osteoarthritis Artificial Intelligence Deep Learning
 
-重要提示：
-- 每个数据库的 query 字段必须是完整的、可执行的检索式字符串
-- 不要使用 + 号拼接字符串，不要换行，整个检索式放在一个字符串中
-- JSON 中的双引号不需要转义，直接写英文双引号即可
-
-请返回 JSON 格式（query 字段必须是符合上述规范的完整检索式字符串，不要包含任何换行符）：
+请返回 JSON 格式（query 字段必须是符合上述规范的完整检索式字符串，所有医学术语都用双引号包裹，每个概念组都用圆括号包裹）：
 {{
-  "pubmed": {{"query": "完整的 PubMed 检索式", "filters": "近5年 | Journal Article, Review", "note": "MeSH + 自由词组合"}},
-  "ieee": {{"query": "完整的 IEEE 检索式", "filters": "近2年 | Conferences/Journals/Early Access", "note": "Index Terms 精确匹配"}},
-  "openalex": {{"query": "OpenAlex 关键词", "note": "空格分隔关键词"}}
+  "pubmed": {{"query": "((概念组1) AND (概念组2) AND (概念组3))", "filters": "近5年 | Journal Article, Review", "note": "MeSH + 自由词组合"}},
+  "ieee": {{"query": "((概念组1) AND (概念组2) AND (概念组3))", "filters": "近2年 | Conferences/Journals/Early Access", "note": "Index Terms 精确匹配"}},
+  "openalex": {{"query": "关键词1 关键词2 关键词3", "note": "空格分隔关键词"}}
 }}"""
 
     result = call_llm(system_prompt, user_prompt, temperature=0.3, max_tokens=1500)

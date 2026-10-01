@@ -91,9 +91,22 @@ def api_confirm():
         with open(tc_path, 'r', encoding='utf-8') as f:
             task_card = yaml.safe_load(f)
 
-    # 生成检索式占位
+    # 生成检索式（优先使用 LLM）
     theme = task_card.get('theme', '')
-    query_result = generate_queries(theme)
+    direction = task_card.get('direction', '')
+    query_result = None
+    llm_error = None
+    try:
+        from modules.llm_client import generate_queries_with_llm
+        query_result = generate_queries_with_llm(theme, direction, task_card.get('databases', ['PubMed', 'IEEE Xplore']))
+    except Exception as e:
+        llm_error = str(e)
+        print(f'[LLM] Query generation failed: {e}')
+
+    if not query_result:
+        query_result = generate_queries(theme)
+        if llm_error:
+            query_result['note'] = f'LLM 调用失败，使用规则生成：{llm_error}'
 
     # 保存检索产物
     q_path = os.path.join(OUTPUTS_DIR, 'queries', f'{task_id}.json')
@@ -202,8 +215,23 @@ def api_report():
     if not papers and task_id:
         lit_path = os.path.join(LITERATURE_DIR, f'{task_id}.json')
         papers = _load_json(lit_path, [])
-    from modules.report_generator import generate_report_content
-    content = generate_report_content(current_task, papers)
+
+    # 优先使用 LLM 生成报告
+    content = None
+    llm_error = None
+    try:
+        from modules.llm_client import generate_report_with_llm
+        content = generate_report_with_llm(current_task, papers)
+    except Exception as e:
+        llm_error = str(e)
+        print(f'[LLM] Report generation failed: {e}')
+
+    if not content:
+        from modules.report_generator import generate_report_content
+        content = generate_report_content(current_task, papers)
+        if llm_error:
+            content = f'> ⚠️ LLM 调用失败，使用模板生成：{llm_error}\n\n' + content
+
     return jsonify({'status': 'ok', 'content': content, 'task_id': task_id})
 
 

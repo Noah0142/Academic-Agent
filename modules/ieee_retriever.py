@@ -78,11 +78,22 @@ def search_ieee(theme, task_card=None):
     if not IEEE_API_KEY:
         return _sample_results()
 
-    theme_en = _cn_to_en_medical(theme)
+    # 优先使用 LLM 生成的检索式
+    querytext = None
+    if task_card:
+        queries = task_card.get('queries', {})
+        ieee_query = queries.get('ieee', {})
+        if isinstance(ieee_query, dict):
+            querytext = ieee_query.get('query')
+
+    # 回退到英文主题
+    if not querytext:
+        querytext = _cn_to_en_medical(theme)
+
     url = 'https://ieeexploreapi.ieee.org/api/v1/search/articles'
     params = {
         'apikey': IEEE_API_KEY,
-        'querytext': theme_en,
+        'querytext': querytext,
         'max_records': 50,
         'start_record': 1,
         'sort_order': 'desc',

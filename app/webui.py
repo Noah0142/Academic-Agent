@@ -117,6 +117,13 @@ def api_confirm():
     task_card['queries'] = query_result
     current_task.update(task_card)
 
+    # 保存更新后的任务卡（包含 LLM 检索式）
+    try:
+        with open(tc_path, 'w', encoding='utf-8') as f:
+            yaml.dump(task_card, f, allow_unicode=True, sort_keys=False)
+    except Exception as e:
+        print(f'[WARN] Failed to save task card: {e}')
+
     return jsonify({'status': 'ok', 'queries': query_result})
 
 

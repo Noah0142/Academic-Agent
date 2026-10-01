@@ -79,9 +79,20 @@ def search_pubmed(theme, task_card=None):
     time_range = (task_card or {}).get('time_range', '5')
     year_from = _parse_year_range(time_range)
 
-    # 构建检索式（优先使用英文翻译）
-    theme_en = _cn_to_en_medical(theme)
-    query = _build_pubmed_query(theme_en)
+    # 优先使用 LLM 生成的检索式
+    query = None
+    if task_card:
+        queries = task_card.get('queries', {})
+        pubmed_query = queries.get('pubmed', {})
+        if isinstance(pubmed_query, dict):
+            query = pubmed_query.get('query')
+
+    # 回退到本地规则生成的检索式
+    if not query:
+        theme_en = _cn_to_en_medical(theme)
+        query = _build_pubmed_query(theme_en)
+
+    print(f'[PubMed] Using query: {query[:200]}')
 
     try:
         from datetime import datetime

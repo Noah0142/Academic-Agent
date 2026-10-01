@@ -73,9 +73,20 @@ def search_openalex(theme, task_card=None):
     except ImportError:
         return []
 
-    theme_en = _cn_to_en_medical(theme)
+    # 优先使用 LLM 生成的检索式
+    search_query = None
+    if task_card:
+        queries = task_card.get('queries', {})
+        oalex_query = queries.get('openalex', {})
+        if isinstance(oalex_query, dict):
+            search_query = oalex_query.get('query')
+
+    # 回退到英文主题
+    if not search_query:
+        search_query = _cn_to_en_medical(theme)
+
     params = {
-        'search': theme_en,
+        'search': search_query,
         'per_page': 20,
         'mailto': os.environ.get('PUBMED_EMAIL', 'Noah13610480142@outlook.com'),
     }
